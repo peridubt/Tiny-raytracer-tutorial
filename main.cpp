@@ -1,39 +1,19 @@
 ﻿#define USE_MATH_DEFINES
-#include <fstream>
 #include <vector>
-#include "geometry.h"
+#include "rendering.h"
 
-void render()
-{
-    constexpr int width  = 1024;
-    constexpr int height = 768;
-    std::vector<Vec3f> framebuffer(width * height);
-
-    for (size_t j = 0; j < height; j++)
-    {
-        for (size_t i = 0; i < width; i++)
-        {
-            framebuffer[i + j * width] = Vec3f(j / static_cast<float>(height),
-                                               i / static_cast<float>(width), 0);
-        }
-    }
-
-    std::ofstream ofs;
-    ofs.open("../out.ppm", std::ios::binary);
-    ofs << "P6\n" << width << " " << height << "\n255\n";
-    for (size_t i = 0; i < height * width; ++i)
-    {
-        for (size_t j = 0; j < 3; j++)
-        {
-            ofs << static_cast<char>(255 * std::max(0.f, std::min(1.f, framebuffer[i][j])));
-        }
-    }
-    ofs.close();
-}
 
 int main()
 {
-    render();
+    Material ivory(Vec3f(0.4, 0.4, 0.3));
+    Material red_rubber(Vec3f(0.3, 0.1, 0.1));
 
+    std::vector<Sphere> spheres;
+    spheres.emplace_back(Vec3f(-3, 0, -16), 2, ivory);
+    spheres.emplace_back(Vec3f(-1.0, -1.5, -12), 2, red_rubber);
+    spheres.emplace_back(Vec3f(1.5, -0.5, -18), 3, red_rubber);
+    spheres.emplace_back(Vec3f(7, 5, -18), 4, ivory);
+
+    render(spheres);
     return 0;
 }

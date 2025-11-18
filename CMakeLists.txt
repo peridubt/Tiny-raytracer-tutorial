@@ -4,4 +4,6 @@ project(tiny_raytracer)
 set(CMAKE_CXX_STANDARD 26)
 
 add_executable(tiny_raytracer main.cpp
-        geometry.h)
+        geometry.h
+        rendering.h
+)
