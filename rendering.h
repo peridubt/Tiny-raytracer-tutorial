@@ -5,6 +5,13 @@
 #include <vector>
 #include "geometry.h"
 
+struct Light
+{
+    Light(const Vec3f &p, const float &i) : position(p), intensity(i) {}
+    Vec3f position;
+    float intensity;
+};
+
 struct Material
 {
     explicit Material(const Vec3f &color) : diffuse_color(color) {}
@@ -58,36 +65,43 @@ inline bool scene_intersect(const Vec3f &orig, const Vec3f &dir,
                             Vec3f &hit, Vec3f &N, Material &material)
 {
     float spheres_dist = std::numeric_limits<float>::max();
-    for (size_t i = 0; i < spheres.size(); i++)
+    for (const auto & sphere : spheres)
     {
         float dist_i;
-        bool hasIntersection = spheres[i].ray_intersect(orig, dir, dist_i);
+        bool hasIntersection = sphere.ray_intersect(orig, dir, dist_i);
         if (hasIntersection && dist_i < spheres_dist)
         {
             spheres_dist = dist_i;
             hit          = orig + dir * dist_i;
-            N            = (hit - spheres[i].center).normalize();
-            material     = spheres[i].material;
+            N            = (hit - sphere.center).normalize();
+            material     = sphere.material;
         }
     }
     return spheres_dist < 1000;
 }
 
 
-inline Vec3f cast_ray(const Vec3f &orig, const Vec3f &dir, const std::vector<Sphere> &spheres)
+inline Vec3f cast_ray(const Vec3f &orig, const Vec3f &dir,
+                      const std::vector<Sphere> &spheres, const std::vector<Light> &lights)
 {
     Vec3f point, N;
     Material material;
 
     if (!scene_intersect(orig, dir, spheres, point, N, material))
     {
-        return {0.2, 0.7, 0.8}; // background color
+        return {0.2, 0.7, 0.8};
     }
 
-    return material.diffuse_color;
+    float diffuse_light_intensity = 0;
+    for (auto light: lights)
+    {
+        Vec3f light_dir = (light.position - point).normalize();
+        diffuse_light_intensity += light.intensity * std::max(0.f, light_dir * N);
+    }
+    return material.diffuse_color * diffuse_light_intensity;
 }
 
-inline void render(const std::vector<Sphere> &spheres)
+inline void render(const std::vector<Sphere> &spheres, const std::vector<Light> &lights)
 {
     constexpr int width         = 1024;
     constexpr int height        = 768;
@@ -106,7 +120,7 @@ inline void render(const std::vector<Sphere> &spheres)
                       * tan(fieldOfView / 2.);
             Vec3f directionVec = Vec3f(x, y, -1).normalize();
 
-            framebuffer[i + j * width] = cast_ray(Vec3f(0, 0, 0), directionVec, spheres);
+            framebuffer[i + j * width] = cast_ray(Vec3f(0, 0, 0), directionVec, spheres, lights);
         }
     }
 
